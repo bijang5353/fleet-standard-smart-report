@@ -53,7 +53,9 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fieldSize: 50 * 1024 * 1024, // 50MB limit for fields
+    files: 1
   }
 });
 
@@ -881,6 +883,43 @@ app.post('/api/analyze', upload.single('inspectionReport'), async (req, res) => 
     
   } catch (error) {
     console.error('Analysis error:', error);
+    res.status(500).json({ 
+      error: 'Analysis failed', 
+      message: error.message 
+    });
+  }
+});
+
+// Base64 인코딩을 사용한 파일 업로드 엔드포인트 (Vercel 제한 우회)
+app.post('/api/analyze-base64', async (req, res) => {
+  try {
+    const { base64Data, filename } = req.body;
+    
+    if (!base64Data) {
+      return res.status(400).json({ error: 'No base64 data provided' });
+    }
+
+    // Base64 데이터를 Buffer로 변환
+    const pdfBuffer = Buffer.from(base64Data, 'base64');
+    
+    // PDF 파싱
+    const pdfData = await pdfParse(pdfBuffer);
+    const text = pdfData.text;
+    
+    console.log(`Processing PDF: ${filename || 'Unknown'}`);
+    console.log(`Text length: ${text.length} characters`);
+    
+    // Fleet Standard 분석
+    const analyzer = new FleetStandardAnalyzer();
+    const analysisResult = await analyzer.analyzeReport(text, filename);
+    
+    res.json({
+      success: true,
+      data: analysisResult
+    });
+    
+  } catch (error) {
+    console.error('Base64 analysis error:', error);
     res.status(500).json({ 
       error: 'Analysis failed', 
       message: error.message 
