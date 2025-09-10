@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Standard Smart Report Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: #1e40af;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header-text h1 {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .header-text p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+
+        .header-right i {
+            font-size: 24px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .glass-card {
+            background: #f8f9ff;
+            border: 1px solid #e5e7eb;
+            color: #333;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .upload-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1e40af;
+        }
+
+        .upload-subtitle {
+            font-size: 18px;
+            opacity: 0.8;
+            margin-bottom: 40px;
+            color: #666;
+        }
+
+        .upload-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 15px;
+            padding: 60px 20px;
+            margin: 30px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f9fafb;
+        }
+
+        .upload-area:hover {
+            border-color: #1e40af;
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            color: #374151;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
+            background: white;
+            color: #1e40af;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-export {
+            background: #dc2626;
+            color: white;
+            margin: 0 10px;
+        }
+
+        .btn-export:hover {
+            background: #b91c1c;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading h3 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .loading p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+        }
+
+        /* Results */
+        .results {
+            display: none;
+            padding: 40px;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .results-header h2 {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .results-header p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        /* Vessel Info */
+        .vessel-info {
+            background: #f8f9ff;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .info-icon.blue { background: #dbeafe; color: #1e40af; }
+        .info-icon.green { background: #dcfce7; color: #16a34a; }
+        .info-icon.purple { background: #f3e8ff; color: #9333ea; }
+        .info-icon.orange { background: #fed7aa; color: #ea580c; }
+
+        .info-text h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-text p {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Score Section */
+        .score-section {
+            text-align: center;
+            margin: 40px 0;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .overall-score {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 15px;
+        }
+
+        .score-scale {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            transition: width 1s ease;
+            border-radius: 10px;
+        }
+
+        .score-note {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        /* Categories */
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .category-name {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .category-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .category-details {
+            margin-top: 20px;
+        }
+
+        .subcategory {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .subcategory:last-child {
+            border-bottom: none;
+        }
+
+        .subcategory-name {
+            font-size: 1rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .subcategory-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-good { background: #dcfce7; color: #16a34a; }
+        .status-satisfactory { background: #dbeafe; color: #1e40af; }
+        .status-unsatisfactory { background: #fed7aa; color: #ea580c; }
+        .status-unacceptable { background: #fecaca; color: #dc2626; }
+
+        .subcategory-score {
+            font-size: 0.9rem;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        /* Detailed Analysis */
+        .detailed-analysis {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 15px;
+        }
+
+        .subcategory-section {
+            margin-bottom: 20px;
+        }
+
+        .subcategory-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .item-analysis {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid #1e40af;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .item-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .item-score {
+            font-size: 0.9rem;
+            color: #1e40af;
+            font-weight: bold;
+        }
+
+        .item-findings {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .analysis-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .analysis-section.good-practices {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+        }
+
+        .analysis-section.needs-improvement {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .analysis-section h5 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-description {
+            margin-top: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Recommendations */
+        .recommendations {
+            background: #f8f9ff;
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 40px;
+        }
+
+        .recommendations h3 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .recommendations h3 i {
+            color: #f59e0b;
+            margin-right: 10px;
+        }
+
+        .recommendation-item {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #1e40af;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-category {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .recommendation-priority {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .priority-high { background: #fecaca; color: #dc2626; }
+        .priority-medium { background: #fed7aa; color: #ea580c; }
+
+        .recommendation-text {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .recommendation-timeline {
+            font-size: 0.9rem;
+            color: #9ca3af;
+        }
+
+        /* Export Section */
+        .export-section {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+        }
+
+        .export-section h3 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .export-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            text-align: center;
+            padding: 30px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-content p {
+            margin-bottom: 10px;
+        }
+
+        /* Error Messages */
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid #fecaca;
+        }
+
+        .error i {
+            margin-right: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .logo-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .upload-section {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 40px 20px;
+            }
+            
+            .results {
+                padding: 20px;
+            }
+            
+            .categories {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="WALWIL-logo.jpg" alt="Wallenius Wilhelmsen" class="logo">
+                    <div class="header-text">
+                        <h1>Fleet Standard Smart Report</h1>
+                        <p>AI-Powered Maritime Inspection Analysis</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <i class="fas fa-ship"></i>
+                    <span>Maritime Excellence</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div id="uploadSection">
+            <div class="card glass-card">
+                <div class="upload-section">
+                    <h2 class="upload-title">Upload Inspection Report</h2>
+                    <p class="upload-subtitle">Upload your SafetyCulture inspection report PDF for intelligent analysis</p>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">Drop your PDF file here or click to browse</div>
+                        <div class="upload-subtext">Maximum file size: 50MB</div>
+                        <input type="file" id="fileInput" class="file-input" accept=".pdf">
+                    </div>
+                    
+                    <button class="btn" id="analyzeBtn" disabled>
+                        <i class="fas fa-search"></i> Analyze Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Section -->
+        <div class="loading" id="loadingSection">
+            <div class="spinner"></div>
+            <h3>Analyzing your inspection report...</h3>
+            <p>This may take a few moments while we process your data</p>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results" id="resultsSection">
+            <div class="card">
+                <div class="results-header">
+                    <h2>Analysis Results</h2>
+                    <p>Comprehensive fleet standard compliance analysis</p>
+                </div>
+
+                <div class="vessel-info" id="vesselInfo">
+                    <!-- Vessel information will be populated here -->
+                </div>
+
+                <div class="score-section">
+                    <div class="overall-score" id="overallScore">0</div>
+                    <div class="score-label">Overall Fleet Standard Score</div>
+                    <div class="score-bar">
+                        <div class="score-fill" id="scoreFill"></div>
+                    </div>
+                    <div class="score-note">Based on Wallenius Wilhelmsen Fleet Standards</div>
+                </div>
+
+                <!-- Overall Findings Section -->
+                <div class="overall-findings-section" id="overallFindingsSection" style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; display: none;">
+                    <h3 style="margin-bottom: 20px; color: #333;"><i class="fas fa-flag"></i> Overall Flagged Items</h3>
+                    <div id="overallFindingsContent">
+                        <!-- Overall findings will be populated here -->
+                    </div>
+                </div>
+
+                <div class="categories" id="categoriesSection">
+                    <!-- Category cards will be populated here -->
+                </div>
+
+                <div class="recommendations" id="recommendationsSection">
+                    <h3><i class="fas fa-lightbulb"></i> Recommendations</h3>
+                    <div id="recommendationsList">
+                        <!-- Recommendations will be populated here -->
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <h3>Export Report</h3>
+                    <div class="export-buttons">
+                        <button class="btn btn-export" id="exportPdfBtn">
+                            <i class="fas fa-file-pdf"></i> Export PDF Report
+                        </button>
+                        <button class="btn btn-secondary" id="exportExcelBtn">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>
+                        <button class="btn btn-secondary" id="newAnalysisBtn">
+                            <i class="fas fa-plus"></i> New Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Wallenius Wilhelmsen. Fleet Standard Smart Report Generator.</p>
+            <p>Powered by AI Technology</p>
+        </div>
+    </footer>
+
+    <script>
+        class FleetReportApp {
+            constructor() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.analyzeBtn = document.getElementById('analyzeBtn');
+                this.uploadSection = document.getElementById('uploadSection');
+                this.loadingSection = document.getElementById('loadingSection');
+                this.resultsSection = document.getElementById('resultsSection');
+                this.analysisData = null;
+                this.selectedFile = null;
+                
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                // File input change
+                this.fileInput.addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0]);
+                });
+
+                // Drag and drop
+                this.uploadArea.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.handleFileSelect(files[0]);
+                    }
+                });
+
+                // Analyze button
+                this.analyzeBtn.addEventListener('click', () => {
+                    this.analyzeReport();
+                });
+
+                // Export buttons
+                document.getElementById('exportPdfBtn').addEventListener('click', () => {
+                    this.exportReport('pdf');
+                });
+
+                document.getElementById('exportExcelBtn').addEventListener('click', () => {
+                    this.exportReport('excel');
+                });
+
+                document.getElementById('newAnalysisBtn').addEventListener('click', () => {
+                    this.resetApp();
+                });
+            }
+
+            handleFileSelect(file) {
+                console.log('📁 File selected:', file ? file.name : 'No file');
+                console.log('📁 File type:', file ? file.type : 'No type');
+                
+                if (file && file.type === 'application/pdf') {
+                    this.selectedFile = file;
+                    this.analyzeBtn.disabled = false;
+                    this.analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    this.uploadArea.innerHTML = `
+                        <div class="upload-icon" style="color: #10b981;">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="upload-text">Selected: ${file.name}</div>
+                        <div class="upload-subtext">Click "Analyze Report" to proceed</div>
+                    `;
+                    
+                    console.log('✅ File stored, ready for analysis');
+                } else {
+                    this.showError('Please select a valid PDF file.');
+                }
+            }
+
+            async analyzeReport() {
+                console.log('🔍 Starting analysis...');
+                
+                if (!this.selectedFile) {
+                    this.showError('Please select a PDF file first.');
+                    return;
+                }
+                
+                console.log('📁 Selected file:', this.selectedFile.name);
+                
+                const formData = new FormData();
+                formData.append('inspectionReport', this.selectedFile);
+
+                this.showLoading();
+                console.log('⏳ Showing loading screen...');
+
+                try {
+                    console.log('📡 Sending request to /api/analyze...');
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    console.log('📡 Response status:', response.status);
+                    console.log('📡 Response ok:', response.ok);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('📄 Response data:', result);
+
+                    if (result.success) {
+                        console.log('✅ Analysis successful!');
+                        this.analysisData = result.data;
+                        this.displayResults();
+                    } else {
+                        console.log('❌ Analysis failed:', result.message);
+                        this.showError(result.message || 'Analysis failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('❌ Error during analysis:', error);
+                    this.showError(`Error: ${error.message}. Please check your connection and try again.`);
+                }
+            }
+
+            showLoading() {
+                this.uploadSection.style.display = 'none';
+                this.resultsSection.style.display = 'none';
+                this.loadingSection.style.display = 'block';
+            }
+
+            showResults() {
+                this.uploadSection.style.display = 'block';
+                this.loadingSection.style.display = 'none';
+                this.resultsSection.style.display = 'block';
+            }
+
+            displayResults() {
+                this.showResults();
+                this.populateVesselInfo();
+                this.populateScore();
+                this.populateOverallFindings();
+                this.populateCategories();
+                this.populateRecommendations();
+            }
+
+            populateVesselInfo() {
+                const data = this.analysisData.extractedData;
+                const vesselInfo = document.getElementById('vesselInfo');
+                
+                vesselInfo.innerHTML = `
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon blue">
+                                <i class="fas fa-ship"></i>
+                            </div>
+                            <div class="info-text">
+                                <h3>Vessel</h3>
+                                <p>${data.vesselName}</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon green">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="info-text">
+                                <h3>Inspection Date</h3>
+                                <p>${data.inspectionDate}</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon purple">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="info-text">
+                                <h3>Inspector</h3>
+                                <p>${data.inspector}</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon orange">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="info-text">
+                                <h3>Findings</h3>
+                                <p>Flagged items: ${data.findings.goodPractices.length + data.findings.deficiencies.length}, Actions: ${data.findings.deficiencies.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            populateScore() {
+                const score = this.analysisData.overallScore;
+                const scoreElement = document.getElementById('overallScore');
+                const scoreFill = document.getElementById('scoreFill');
+                
+                scoreElement.textContent = score.toFixed(1);
+                
+                // Convert 1-4 scale to percentage for progress bar (1=25%, 2=50%, 3=75%, 4=100%)
+                const safeScore = Math.min(3.9, Math.max(1.0, score));
+                const percentage = ((safeScore - 1) / 3) * 100;
+                scoreFill.style.width = `${percentage}%`;
+                
+                // Add score scale information
+                const scoreLabel = document.querySelector('.score-label');
+                scoreLabel.innerHTML = `
+                    Overall Fleet Standard Score (Average)<br>
+                    <span class="score-scale">Scale: 1=Good, 2=Satisfactory, 3=Unsatisfactory, 4=Unacceptable</span>
+                `;
+                
+                // Color coding based on score (1-4 scale)
+                if (safeScore <= 1.5) {
+                    scoreElement.style.color = '#10b981';
+                    scoreFill.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                } else if (safeScore <= 2.5) {
+                    scoreElement.style.color = '#3b82f6';
+                    scoreFill.style.background = 'linear-gradient(90deg, #3b82f6, #60a5fa)';
+                } else if (safeScore <= 3.5) {
+                    scoreElement.style.color = '#f59e0b';
+                    scoreFill.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+                } else {
+                    scoreElement.style.color = '#ef4444';
+                    scoreFill.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+                }
+            }
+
+            populateOverallFindings() {
+                const data = this.analysisData.extractedData;
+                const findingsSection = document.getElementById('overallFindingsSection');
+                const findingsContent = document.getElementById('overallFindingsContent');
+                
+                if (!data.findings || (data.findings.goodPractices.length === 0 && data.findings.deficiencies.length === 0)) {
+                    findingsSection.style.display = 'none';
+                    return;
+                }
+                
+                findingsSection.style.display = 'block';
+                
+                let html = '';
+                
+                // Good Practices - Remove duplicates and add professional praise
+                if (data.findings.goodPractices.length > 0) {
+                    // Remove duplicate items
+                    const uniqueGoodPractices = [...new Set(data.findings.goodPractices)];
+                    
+                    // Generate professional praise comments
+                    const professionalPraise = this.generateProfessionalPraise(uniqueGoodPractices);
+                    
+                    html += `
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: #10b981; margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Good Practices</h4>
+                            <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 5px;">
+                                ${professionalPraise.map(item => `
+                                    <div style="margin-bottom: 10px; display: flex; align-items: flex-start;">
+                                        <i class="fas fa-star" style="color: #10b981; margin-right: 10px; margin-top: 3px;"></i>
+                                        <span>${item}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Deficiencies - Remove photo references and show descriptions only
+                if (data.findings.deficiencies.length > 0) {
+                    const deficiencyDescriptions = this.extractDeficiencyDescriptions(data.findings.deficiencies);
+                    
+                    html += `
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: #f59e0b; margin-bottom: 15px;"><i class="fas fa-exclamation-triangle"></i> Deficiencies</h4>
+                            <div style="background: #fefbf2; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 5px;">
+                                ${deficiencyDescriptions.map(item => `
+                                    <div style="margin-bottom: 10px; display: flex; align-items: flex-start;">
+                                        <i class="fas fa-tools" style="color: #f59e0b; margin-right: 10px; margin-top: 3px;"></i>
+                                        <span>${item}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                findingsContent.innerHTML = html;
+            }
+
+            generateProfessionalPraise(goodPractices) {
+                // Return the actual content from PDF with professional formatting
+                return goodPractices.map(practice => {
+                    // Clean up the practice text
+                    let cleanPractice = practice.trim();
+                    
+                    // Add professional context if the practice is too brief
+                    if (cleanPractice.length < 50) {
+                        if (cleanPractice.toLowerCase().includes('crew') && cleanPractice.toLowerCase().includes('professional')) {
+                            return `${cleanPractice}. This demonstrates exceptional operational professionalism and adherence to maritime best practices.`;
+                        } else if (cleanPractice.toLowerCase().includes('improvement')) {
+                            return `${cleanPractice}. Such responsiveness to feedback demonstrates excellent management commitment to continuous improvement.`;
+                        } else {
+                            return `${cleanPractice}. This exemplifies the high standards maintained aboard the vessel.`;
+                        }
+                    }
+                    
+                    // Return the original practice with minor formatting improvements
+                    return cleanPractice.charAt(0).toUpperCase() + cleanPractice.slice(1);
+                });
+            }
+
+            extractDeficiencyDescriptions(deficiencies) {
+                return deficiencies.map(deficiency => {
+                    // Remove photo references but keep the actual content
+                    let cleanDescription = deficiency.replace(/Photo\s*\d+Photo\s*\d+Photo\s*\d+/gi, '');
+                    cleanDescription = cleanDescription.replace(/Photo\s*\d+Photo\s*\d+/gi, '');
+                    cleanDescription = cleanDescription.replace(/Photo\s*\d+/gi, '');
+                    
+                    // Clean up any remaining artifacts
+                    cleanDescription = cleanDescription.replace(/^\s*[-•]\s*/, ''); // Remove leading bullets
+                    cleanDescription = cleanDescription.replace(/\s+/g, ' '); // Replace multiple spaces with single space
+                    cleanDescription = cleanDescription.trim();
+                    
+                    // If the description is too short or empty, provide a generic description
+                    if (cleanDescription.length < 10) {
+                        return "Deficiency identified requiring corrective action to meet fleet standards.";
+                    }
+                    
+                    // Ensure proper capitalization
+                    return cleanDescription.charAt(0).toUpperCase() + cleanDescription.slice(1);
+                });
+            }
+
+            populateCategories() {
+                const categoriesSection = document.getElementById('categoriesSection');
+                const analysis = this.analysisData.analysis;
+                
+                let html = '';
+                Object.keys(analysis).forEach(category => {
+                    const categoryData = analysis[category];
+                    const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+                    
+                    html += `
+                        <div class="category-card">
+                            <div class="category-header">
+                                <div class="category-name">${categoryName}</div>
+                                <div class="category-score">${categoryData.score.toFixed(1)}/4</div>
+                            </div>
+                            <div class="category-details">
+                                <div class="score-scale">Scale: 1=Good, 2=Satisfactory, 3=Unsatisfactory, 4=Unacceptable</div>
+                                ${Object.keys(categoryData.details).map(subCategory => {
+                                    const subData = categoryData.details[subCategory];
+                                    const statusClass = this.getStatusClass(subData.status);
+                                    return `
+                                        <div class="subcategory">
+                                            <div class="subcategory-name">${subCategory}</div>
+                                            <div>
+                                                <span class="subcategory-status ${statusClass}">${subData.status}</span>
+                                                <span class="subcategory-score">${subData.score.toFixed(1)}/4</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <div class="detailed-analysis">
+                                ${this.renderSubcategoryAnalysis(categoryData.subcategories)}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                categoriesSection.innerHTML = html;
+            }
+
+            renderSubcategoryAnalysis(subcategories) {
+                let html = '';
+                
+                Object.keys(subcategories).forEach(subCategory => {
+                    const subcategoryData = subcategories[subCategory];
+                    html += `<div class="subcategory-section">`;
+                    html += `<h4>${subCategory}</h4>`;
+                    
+                    // Show all items without grouping by Good Practice/Deficiency
+                    html += `
+                        <div class="analysis-section">
+                            <div class="item-list">
+                                ${Object.keys(subcategoryData).map(item => {
+                                    const itemData = subcategoryData[item];
+                                    return `
+                                        <div class="item-analysis">
+                                            <div class="item-header">
+                                                <span class="item-name">${item}</span>
+                                                <div>
+                                                    <span class="item-status ${this.getStatusClass(itemData.status)}">${itemData.status}</span>
+                                                    <span class="item-score">${itemData.score.toFixed(1)}/4</span>
+                                                </div>
+                                            </div>
+                                            <div class="item-criteria">
+                                                <strong>Criteria:</strong> ${itemData.criteria || 'N/A'}
+                                            </div>
+                                            ${itemData.findings.length > 0 ? `
+                                                <div class="item-findings">
+                                                    <strong>Specific Findings:</strong> ${itemData.findings.join(', ')}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                    
+                    html += `</div>`;
+                });
+                
+                return html;
+            }
+
+            populateRecommendations() {
+                const recommendationsList = document.getElementById('recommendationsList');
+                const recommendations = this.analysisData.recommendations;
+                
+                if (recommendations.length === 0) {
+                    recommendationsList.innerHTML = '<p style="color: #666;">No specific recommendations at this time. Continue maintaining current standards.</p>';
+                    return;
+                }
+                
+                let html = '';
+                recommendations.forEach(rec => {
+                    const priorityClass = rec.priority.toLowerCase();
+                    html += `
+                        <div class="recommendation-item">
+                            <div class="recommendation-header">
+                                <div class="recommendation-category">${rec.category}</div>
+                                <div class="recommendation-priority priority-${priorityClass}">${rec.priority}</div>
+                            </div>
+                            <div class="recommendation-text">${rec.recommendation}</div>
+                            <div class="recommendation-timeline">Timeline: ${rec.timeline}</div>
+                        </div>
+                    `;
+                });
+                
+                recommendationsList.innerHTML = html;
+            }
+
+            getStatusClass(status) {
+                switch (status) {
+                    case 'Good': return 'status-good';
+                    case 'Satisfactory': return 'status-satisfactory';
+                    case 'Unsatisfactory': return 'status-unsatisfactory';
+                    case 'Unacceptable': return 'status-unacceptable';
+                    default: return 'status-satisfactory';
+                }
+            }
+
+            exportReport(format) {
+                if (!this.analysisData) {
+                    this.showError('No analysis data available for export.');
+                    return;
+                }
+
+                if (format === 'pdf') {
+                    this.exportToPDF();
+                } else if (format === 'excel') {
+                    this.exportToExcel();
+                }
+            }
+
+            exportToPDF() {
+                const printWindow = window.open('', '_blank');
+                const reportContent = this.generateReportHTML();
+                
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Fleet Standard Report - ${this.analysisData.extractedData.vesselName}</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; margin: 20px; }
+                                .header { text-align: center; margin-bottom: 30px; }
+                                .section { margin-bottom: 30px; }
+                                .score { font-size: 2em; font-weight: bold; color: #1e40af; }
+                                table { width: 100%; border-collapse: collapse; }
+                                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                                th { background-color: #f2f2f2; }
+                            </style>
+                        </head>
+                        <body>
+                            ${reportContent}
+                        </body>
+                    </html>
+                `);
+                
+                printWindow.document.close();
+                printWindow.print();
+            }
+
+            exportToExcel() {
+                const csvContent = this.generateCSVContent();
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fleet_report_${this.analysisData.extractedData.vesselName.replace(/\s+/g, '_')}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            generateReportHTML() {
+                const data = this.analysisData;
+                return `
+                    <div class="header">
+                        <h1>Fleet Standard Inspection Report</h1>
+                        <h2>${data.extractedData.vesselName}</h2>
+                        <p>Inspection Date: ${data.extractedData.inspectionDate}</p>
+                        <p>Inspector: ${data.extractedData.inspector}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h3>Overall Score (Average)</h3>
+                        <div class="score">${data.overallScore.toFixed(1)}/4</div>
+                        <p>Scale: 1=Good, 2=Satisfactory, 3=Unsatisfactory, 4=Unacceptable</p>
+                    </div>
+                    
+                    <div class="section">
+                        <h3>Category Analysis</h3>
+                        <table>
+                            <tr><th>Category</th><th>Score</th><th>Weight</th></tr>
+                            ${Object.keys(data.analysis).map(category => `
+                                <tr>
+                                    <td>${category.charAt(0).toUpperCase() + category.slice(1)}</td>
+                                    <td>${data.analysis[category].score}</td>
+                                    <td>${(data.analysis[category].weight * 100).toFixed(0)}%</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </div>
+                    
+                    <div class="section">
+                        <h3>Recommendations</h3>
+                        ${data.recommendations.map(rec => `
+                            <div>
+                                <strong>${rec.category} (${rec.priority})</strong><br>
+                                ${rec.recommendation}<br>
+                                <em>Timeline: ${rec.timeline}</em>
+                            </div><br>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            generateCSVContent() {
+                const data = this.analysisData;
+                let csv = 'Category,Score,Weight,Status\n';
+                
+                Object.keys(data.analysis).forEach(category => {
+                    const categoryData = data.analysis[category];
+                    const status = categoryData.score <= 1.5 ? 'Good' : 
+                                 categoryData.score <= 2.5 ? 'Satisfactory' : 
+                                 categoryData.score <= 3.5 ? 'Unsatisfactory' : 'Unacceptable';
+                    csv += `${category},${categoryData.score.toFixed(1)}/4,${(categoryData.weight * 100).toFixed(0)}%,${status}\n`;
+                });
+                
+                return csv;
+            }
+
+            showError(message) {
+                console.error('🚨 Showing error:', message);
+                
+                // Remove any existing error messages
+                const existingErrors = document.querySelectorAll('.error');
+                existingErrors.forEach(error => error.remove());
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+                
+                const container = document.querySelector('.container');
+                container.insertBefore(errorDiv, container.firstChild);
+                
+                // Show upload section again
+                this.uploadSection.style.display = 'block';
+                this.loadingSection.style.display = 'none';
+                this.resultsSection.style.display = 'none';
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 10000);
+            }
+
+            resetApp() {
+                this.analysisData = null;
+                this.selectedFile = null;
+                this.fileInput.value = '';
+                this.analyzeBtn.disabled = true;
+                this.analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                this.uploadArea.innerHTML = `
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">Drop your PDF file here or click to browse</div>
+                    <div class="upload-subtext">Maximum file size: 50MB</div>
+                `;
+                
+                this.uploadSection.style.display = 'block';
+                this.loadingSection.style.display = 'none';
+                this.resultsSection.style.display = 'none';
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new FleetReportApp();
+        });
+    </script>
+</body>
+</html>
